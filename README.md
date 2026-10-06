@@ -14,7 +14,7 @@
 This is a 100% frontend web application running entirely in the browser without any backend dependencies.
 
 ### Option A: Direct Browser Execution
-Open [`index.html`](file:///c:/Users/Administrator/Desktop/devfest-242-15-882/index.html) or `Tender Package Builder.html` directly in Google Chrome (or any modern browser).
+Open [`index.html`](file:///c:/Users/Administrator/Desktop/devfest-242-15-882/index.html) directly in Google Chrome (or any modern browser).
 
 ### Option B: Local Web Server
 Run Python's built-in HTTP server or any static server:
