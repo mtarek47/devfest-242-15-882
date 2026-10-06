@@ -2,7 +2,7 @@
 
 **AI DevFest 2026 — AI Vibe-Coding Contest (Solo)**
 
-- **Participant Name:** Tarek Parvez
+- **Participant Name:** M Tarek Rahman
 - **Registration Number:** 242-15-882
 - **Public Live HTTPS Website:** https://mtarek47.github.io/devfest-242-15-882/
 - **GitHub Repository:** https://github.com/mtarek47/devfest-242-15-882
@@ -92,8 +92,8 @@ Visit the official live deployment on GitHub Pages:
 - **Demo Sample Pack Loader:** 1-click demo button that instantly loads sample tender requirements and prepares testing.
 - **Export Checklist (CSV):** Exports a complete audit-ready CSV checklist of all requirements, matched files, page counts, expiry dates, and statuses.
 - **Index Page / Table of Contents:** Optional checkbox to generate a dedicated Table of Contents page right after the cover.
-- **Save & Restore Workspace:** LocalStorage persistence alongside JSON project file export/import.
-- **Digital Seal & Signature:** Supports uploading a PNG seal or signature image stamped onto document packages.
+- **Custom Watermark & PNG Logo / Seal:** Allows applying custom text watermarks (e.g., CONFIDENTIAL, custom company watermark) or uploading custom PNG logos/seals with selectable opacity, colors, positions (center watermark, top-right header, bottom-right seal), and target pages (all pages, cover only, or document pages only).
+- **Digital Seal & Signature:** Supports uploading and stamping official PNG seal or signature images.
 - **Graceful Error Handling:** Protects against corrupted, damaged, or password-protected PDF files.
 
 ---

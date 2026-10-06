@@ -645,11 +645,62 @@ main {
           <input type="checkbox" id="chkIndexPage">
           <span id="txtOptIndex">Include Index Page (Table of Contents)</span>
         </label>
-        <label title="Place digital seal/stamp on package">
-          <input type="checkbox" id="chkSeal">
-          <span id="txtOptSeal">Stamp Digital Seal/Signature (PNG)</span>
+        <label>
+          <input type="checkbox" id="chkWatermark">
+          <span id="txtOptWatermark">Custom Watermark / PNG Logo</span>
         </label>
-        <input type="file" id="sealInput" accept="image/png" style="display:none;">
+      </div>
+
+      <!-- Watermark Configuration Subpanel -->
+      <div id="watermarkPanel" style="display:none;background:var(--pn-alt);border:1px solid var(--ln);border-radius:8px;padding:14px;margin-bottom:14px;">
+        <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-bottom:10px;">
+          <b id="txtWmMode" style="font-size:13px;">Watermark Type:</b>
+          <label style="cursor:pointer;"><input type="radio" name="wmType" value="text" checked> <span id="txtWmTypeText">Text Watermark</span></label>
+          <label style="cursor:pointer;"><input type="radio" name="wmType" value="png"> <span id="txtWmTypePng">PNG Logo / Seal</span></label>
+        </div>
+
+        <!-- Text Watermark Controls -->
+        <div id="wmTextControls" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px;">
+          <input type="text" id="wmTextInput" placeholder="CONFIDENTIAL / MEGHNA TECH" value="CONFIDENTIAL" style="padding:6px 10px;border-radius:6px;border:1px solid var(--ln);background:var(--pn);color:var(--ink);min-width:220px;font:inherit;">
+          <select id="wmTextColor" style="padding:6px 10px;border-radius:6px;border:1px solid var(--ln);background:var(--pn);color:var(--ink);font:inherit;">
+            <option value="red">Red (লাল)</option>
+            <option value="gray">Gray (ধূসর)</option>
+            <option value="blue">Blue (নীল)</option>
+          </select>
+          <select id="wmTextOpacity" style="padding:6px 10px;border-radius:6px;border:1px solid var(--ln);background:var(--pn);color:var(--ink);font:inherit;">
+            <option value="0.10">10% Opacity (Very Subtle)</option>
+            <option value="0.18" selected>18% Opacity (Standard)</option>
+            <option value="0.30">30% Opacity (Bold)</option>
+          </select>
+        </div>
+
+        <!-- PNG Logo Controls -->
+        <div id="wmPngControls" style="display:none;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px;">
+          <label class="btn btn-sm">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <span id="txtUploadLogoBtn">Choose PNG Logo</span>
+            <input type="file" id="wmLogoInput" accept="image/png" hidden>
+          </label>
+          <span id="wmLogoFileName" style="font-size:12px;color:var(--mu);">No PNG chosen</span>
+          <select id="wmLogoPosition" style="padding:6px 10px;border-radius:6px;border:1px solid var(--ln);background:var(--pn);color:var(--ink);font:inherit;">
+            <option value="center">Center Watermark (মাঝখানে)</option>
+            <option value="seal">Bottom-Right Official Seal (ডানদিকের সিল)</option>
+            <option value="header">Top-Right Logo Header (উপরের লোগো)</option>
+          </select>
+          <select id="wmLogoOpacity" style="padding:6px 10px;border-radius:6px;border:1px solid var(--ln);background:var(--pn);color:var(--ink);font:inherit;">
+            <option value="0.18">18% Opacity (Watermark)</option>
+            <option value="0.50">50% Opacity (Semi-transparent)</option>
+            <option value="1.0" selected>100% Opacity (Solid)</option>
+          </select>
+        </div>
+
+        <!-- Apply to Pages -->
+        <div style="font-size:12px;color:var(--mu);display:flex;gap:14px;align-items:center;flex-wrap:wrap;border-top:1px solid var(--ln-light);padding-top:8px;">
+          <span><b id="txtApplyToPages">Apply to:</b></span>
+          <label style="cursor:pointer;"><input type="radio" name="wmTarget" value="all" checked> <span id="txtApplyAll">All Pages</span></label>
+          <label style="cursor:pointer;"><input type="radio" name="wmTarget" value="docs"> <span id="txtApplyDocs">Document Pages Only</span></label>
+          <label style="cursor:pointer;"><input type="radio" name="wmTarget" value="cover"> <span id="txtApplyCover">Cover Page Only</span></label>
+        </div>
       </div>
 
       <div id="genStatusContainer"></div>
@@ -706,7 +757,7 @@ main {
 </main>
 
 <script>
-const { PDFDocument, StandardFonts, rgb } = PDFLib;
+const { PDFDocument, StandardFonts, rgb, degrees } = PDFLib;
 
 // Translations dictionary
 const I18N = {
@@ -749,7 +800,17 @@ const I18N = {
     dupOf: n => `identical to ${n}`,
     genHead: "Package Generation",
     optIndex: "Include Index Page (Table of Contents)",
-    optSeal: "Stamp Digital Seal/Signature (PNG)",
+    optWatermark: "Custom Watermark / PNG Logo",
+    wmMode: "Watermark Type:",
+    wmTypeText: "Text Watermark",
+    wmTypePng: "PNG Logo / Seal",
+    uploadLogoBtn: "Choose PNG Logo",
+    applyToPages: "Apply to:",
+    applyAll: "All Pages",
+    applyDocs: "Document Pages Only",
+    applyCover: "Cover Page Only",
+    noLogoChosen: "No PNG chosen",
+    logoLoaded: n => `PNG logo “${n}” loaded successfully!`,
     genBtn: "Generate package",
     downloadBtn: "Download package",
     readyMsg: "All required documents verified! Ready to build package.",
@@ -808,9 +869,18 @@ const I18N = {
     OK: "ঠিক আছে",
     dup: "ডুপ্লিকেট",
     dupOf: n => `${n}-এর হুবহু অনুরূপ`,
-    genHead: "প্যাকেজ তৈরি",
     optIndex: "সূচিপত্র পৃষ্ঠা যুক্ত করুন (ইনডেক্স)",
-    optSeal: "ডিজিটাল সিল/স্বাক্ষর যুক্ত করুন (PNG)",
+    optWatermark: "কাস্টম ওয়াটারমার্ক / PNG লোগো",
+    wmMode: "ওয়াটারমার্কের ধরন:",
+    wmTypeText: "টেক্সট ওয়াটারমার্ক",
+    wmTypePng: "PNG লোগো / সিল",
+    uploadLogoBtn: "PNG লোগো বাছুন",
+    applyToPages: "প্রয়োগের স্থান:",
+    applyAll: "সকল পৃষ্ঠা",
+    applyDocs: "শুধুমাত্র ডকুমেন্টের পৃষ্ঠা",
+    applyCover: "শুধুমাত্র কভার পৃষ্ঠা",
+    noLogoChosen: "কোনো PNG নির্বাচিত হয়নি",
+    logoLoaded: n => `PNG লোগো “${n}” সফলভাবে লোড হয়েছে!`,
     genBtn: "প্যাকেজ তৈরি করুন",
     downloadBtn: "প্যাকেজ ডাউনলোড",
     readyMsg: "সকল প্রয়োজনীয় ডকুমেন্ট সঠিক আছে! প্যাকেজ তৈরির জন্য প্রস্তুত।",
@@ -1349,11 +1419,93 @@ async function generatePackage() {
     }
 
     // ==========================================
-    // 6.3 & 6.4 FOOTER ON EVERY PAGE
+    // CUSTOM WATERMARK & PNG LOGO
+    // ==========================================
+    const hasWatermark = $("chkWatermark") && $("chkWatermark").checked;
+    let wmType = "text";
+    const wmTypeRadio = document.querySelector('input[name="wmType"]:checked');
+    if (wmTypeRadio) wmType = wmTypeRadio.value;
+
+    const wmTarget = (document.querySelector('input[name="wmTarget"]:checked') || {}).value || "all";
+    const wmCustomText = ($("wmTextInput") ? $("wmTextInput").value : "CONFIDENTIAL").trim();
+    const wmColorMode = $("wmTextColor") ? $("wmTextColor").value : "red";
+    const wmTextOpacity = parseFloat($("wmTextOpacity") ? $("wmTextOpacity").value : 0.18) || 0.18;
+    const wmLogoPos = $("wmLogoPosition") ? $("wmLogoPosition").value : "center";
+    const wmLogoOpacity = parseFloat($("wmLogoOpacity") ? $("wmLogoOpacity").value : 1.0) || 1.0;
+
+    let wmColor = rgb(0.85, 0.2, 0.2); // Red
+    if (wmColorMode === "gray") wmColor = rgb(0.5, 0.5, 0.5);
+    if (wmColorMode === "blue") wmColor = rgb(0.12, 0.35, 0.7);
+
+    let embeddedLogoImg = null;
+    if (hasWatermark && wmType === "png" && watermarkPngBytes) {
+      try {
+        embeddedLogoImg = await outPdf.embedPng(watermarkPngBytes);
+      } catch(e) {
+        console.warn("Failed embedding PNG logo:", e);
+      }
+    }
+
+    // ==========================================
+    // 6.3 & 6.4 FOOTER AND WATERMARK ON EVERY PAGE
     // <tender_id> | Page X of Y
     // ==========================================
     const allPages = outPdf.getPages();
     allPages.forEach((p, idx) => {
+      const isCover = (idx === 0);
+      const shouldApplyWm = hasWatermark && (
+        wmTarget === "all" ||
+        (wmTarget === "cover" && isCover) ||
+        (wmTarget === "docs" && !isCover)
+      );
+
+      if (shouldApplyWm) {
+        const { width, height } = p.getSize();
+        if (wmType === "text" && wmCustomText) {
+          const fontSize = Math.min(width, height) * 0.11;
+          const textWidth = boldFont.widthOfTextAtSize(wmCustomText, fontSize);
+          p.drawText(safeAscii(wmCustomText), {
+            x: (width - textWidth * 0.707) / 2,
+            y: (height - textWidth * 0.707) / 2,
+            size: fontSize,
+            font: boldFont,
+            color: wmColor,
+            rotate: degrees(45),
+            opacity: wmTextOpacity
+          });
+        } else if (wmType === "png" && embeddedLogoImg) {
+          if (wmLogoPos === "center") {
+            const maxSize = Math.min(width, height) * 0.5;
+            const dims = embeddedLogoImg.scaleToFit(maxSize, maxSize);
+            p.drawImage(embeddedLogoImg, {
+              x: (width - dims.width) / 2,
+              y: (height - dims.height) / 2,
+              width: dims.width,
+              height: dims.height,
+              opacity: wmLogoOpacity
+            });
+          } else if (wmLogoPos === "header") {
+            const dims = embeddedLogoImg.scaleToFit(110, 45);
+            p.drawImage(embeddedLogoImg, {
+              x: width - dims.width - 35,
+              y: height - dims.height - 25,
+              width: dims.width,
+              height: dims.height,
+              opacity: wmLogoOpacity
+            });
+          } else { // bottom-right seal
+            const dims = embeddedLogoImg.scaleToFit(110, 110);
+            p.drawImage(embeddedLogoImg, {
+              x: width - dims.width - 45,
+              y: FOOTER_HEIGHT + 20,
+              width: dims.width,
+              height: dims.height,
+              opacity: wmLogoOpacity
+            });
+          }
+        }
+      }
+
       const footerString = `${tenderData.tender_id} | Page ${idx + 1} of ${totalPackagePages}`;
       const textWidth = font.widthOfTextAtSize(footerString, 9.5);
       const centerX = (p.getWidth() - textWidth) / 2;
@@ -1409,7 +1561,15 @@ function render() {
   $("txtAutoMatch").textContent = t("autoMatch");
   $("txtGenHead").textContent = t("genHead");
   $("txtOptIndex").textContent = t("optIndex");
-  $("txtOptSeal").textContent = t("optSeal");
+  if ($("txtOptWatermark")) $("txtOptWatermark").textContent = t("optWatermark");
+  if ($("txtWmMode")) $("txtWmMode").textContent = t("wmMode");
+  if ($("txtWmTypeText")) $("txtWmTypeText").textContent = t("wmTypeText");
+  if ($("txtWmTypePng")) $("txtWmTypePng").textContent = t("wmTypePng");
+  if ($("txtUploadLogoBtn")) $("txtUploadLogoBtn").textContent = t("uploadLogoBtn");
+  if ($("txtApplyToPages")) $("txtApplyToPages").textContent = t("applyToPages");
+  if ($("txtApplyAll")) $("txtApplyAll").textContent = t("applyAll");
+  if ($("txtApplyDocs")) $("txtApplyDocs").textContent = t("applyDocs");
+  if ($("txtApplyCover")) $("txtApplyCover").textContent = t("applyCover");
   if ($("txtBtnGen")) $("txtBtnGen").textContent = t("genBtn");
   $("txtUploadHead").textContent = t("uploadHead");
   $("txtUploadBtn").textContent = t("uploadBtn");
@@ -1696,22 +1856,34 @@ $("btnClearAll").onclick = () => {
   }
 };
 
-// Seal upload handling
-$("chkSeal").onchange = e => {
-  if (e.target.checked && !sealImageBytes) {
-    $("sealInput").click();
-  }
-};
-$("sealInput").onchange = async e => {
-  const file = e.target.files[0];
-  if (file) {
-    sealImageBytes = new Uint8Array(await file.arrayBuffer());
-    addToast(t("sealLoaded"), "ok");
-  } else {
-    $("chkSeal").checked = false;
-  }
-  e.target.value = "";
-};
+let watermarkPngBytes = null;
+
+// Watermark event bindings
+if ($("chkWatermark")) {
+  $("chkWatermark").onchange = e => {
+    $("watermarkPanel").style.display = e.target.checked ? "block" : "none";
+  };
+}
+
+document.querySelectorAll('input[name="wmType"]').forEach(r => {
+  r.onchange = () => {
+    const isText = r.value === "text";
+    $("wmTextControls").style.display = isText ? "flex" : "none";
+    $("wmPngControls").style.display = isText ? "none" : "flex";
+  };
+});
+
+if ($("wmLogoInput")) {
+  $("wmLogoInput").onchange = async e => {
+    const file = e.target.files[0];
+    if (file) {
+      watermarkPngBytes = new Uint8Array(await file.arrayBuffer());
+      $("wmLogoFileName").textContent = file.name;
+      addToast(t("logoLoaded")(file.name), "ok");
+    }
+    e.target.value = "";
+  };
+}
 
 // Initial load
 loadFromLocalStorage();
@@ -1757,6 +1929,33 @@ if (urlParams.get("demo") === "blocking") {
   expiryDates = {
     R01: "2025-06-30"
   };
+}
+if (urlParams.get("demo") === "watermark") {
+  loadSamplePackDemo();
+  uploadedFiles = [
+    { id: 1, name: "trade_license_2026.pdf", pages: 1, size: 2945, hash: "h_trade" },
+    { id: 2, name: "03_tin_certificate.pdf", pages: 1, size: 2606, hash: "h_tin" },
+    { id: 3, name: "04_vat_certificate.pdf", pages: 1, size: 2616, hash: "h_vat" },
+    { id: 4, name: "bank_solvency.pdf", pages: 1, size: 2923, hash: "h_bank" },
+    { id: 5, name: "experience_cert.pdf", pages: 2, size: 3995, hash: "h_exp_dup" },
+    { id: 6, name: "experience_cert (1).pdf", pages: 2, size: 3995, hash: "h_exp_dup" },
+    { id: 7, name: "02_technical_proposal.pdf", pages: 6, size: 9286, hash: "h_tech" },
+    { id: 8, name: "01_financial_proposal.pdf", pages: 2, size: 4060, hash: "h_fin" },
+    { id: 9, name: "scan_0042.pdf", pages: 1, size: 171663, hash: "h_dec" }
+  ];
+  matches = {
+    R01: 1, R02: 2, R03: 3, R04: 4, R05: 5, R08: 7, R09: 8, R10: 9
+  };
+  expiryDates = {
+    R01: "2027-06-30",
+    R04: "2026-12-31"
+  };
+  setTimeout(() => {
+    if ($("chkWatermark")) {
+      $("chkWatermark").checked = true;
+      if ($("watermarkPanel")) $("watermarkPanel").style.display = "block";
+    }
+  }, 50);
 }
 if (urlParams.get("lang") === "bn") {
   currentLang = "bn";
